@@ -1,0 +1,12 @@
+{
+  "name": "replicator-IR",
+  "version": "0.1.0",
+  "description": ""Infrarred Tranceiver Block"",
+  "homepage": "",
+  "authors": [
+    "Alexander Agudelo"
+  ],
+  "main": "main.js",
+  "keywords": [],
+  "license": "MIT"
+}

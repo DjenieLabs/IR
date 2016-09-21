@@ -1,0 +1,36 @@
+<!-- Custom Settings -  IR Block -->
+<template id="block-custom-properties">
+  <p></p><p></p>
+  <div class="ui form">
+    {{#each codes}}
+    <div class="inline fields record-row" data-index={{index}}>
+
+      <div class="ten wide field">
+        <div class="ui inverted transparent icon input">
+          <input type="text" data-index={{index}} placeholder="Name" value="{{name}}" style="color:white" >
+          <!--<i class="search icon"></i>-->
+        </div>
+      </div>
+
+      <div class="two wide field">
+        <button id="btRecord" data-index={{index}} class="circular ui mini black icon button">
+          <i class="yellow icon record"></i>
+        </button>
+      </div>
+      <div class="two wide field">
+        <button id="btDelete" data-index={{index}} class="circular ui mini black icon button">
+          <i class="white icon delete"></i>
+        </button>
+      </div>
+
+    </div>
+    {{/each}}
+
+    <div class="ui inverted divider"></div>
+    <div class="inline mini field">
+      <button id="btAdd" class="circular ui icon button">
+        <i class="icon plus"></i>
+      </button>
+    </div>
+  </div>
+</template>

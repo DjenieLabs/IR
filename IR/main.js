@@ -1,0 +1,365 @@
+define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel, RIB){
+  var inputs = ["RAW", "CODE"];
+  var actions = ['SEND_RAW'];
+
+  var IR = {};
+  var _stopLoading = false;
+
+  // Extract the name from the codes
+  function getCodeList(){
+    var list = [];
+    for(var action of this.codeList){
+      if(action.code !== 0){
+        list.push(action.name);
+      }
+    }
+
+    return list;
+  }
+
+  IR.getActions = function() {
+    return actions.concat(getCodeList.call(this));
+  };
+
+  IR.getInputs = function() {
+    var newInputs = getCodeList.call(this);
+    return inputs.concat(newInputs);
+  };
+
+  /**
+   * Triggered when added for the first time to the side bar.
+   * This script should subscribe to all the events and broadcast
+   * to all its copies the data.
+   * NOTE: The call is bound to the block's instance, hence 'this'
+   * does not refer to this module, for that use 'IR'
+   */
+  IR.onLoad = function(){
+    var that = this;
+    // Subscribe to the hardware events
+    // Hub.subscribe("block:change", this).then(function(event){
+    //   Hub.on(event, function(data){
+    this.addSubscription('block:change', function(data){
+      // Send my data to anyone listening
+      // Only send new codes, ignore REPEAT events
+      if(data.message.code != 0){
+        if(data.message.raw){
+          // Convert into hex
+          var hex = "0x";
+          for(var c  of data.message.raw){
+            hex += c.toString(16);
+          }
+
+          data.message.raw = hex;
+        }
+
+        // Set any item that is in recording mode.
+        recordCode.call(that, data);
+
+        // Check if the event contains one of the codes
+        // we are waiting for.
+        preProcessCodes.call(that, data.message);
+
+        // Send data to logic maker for processing
+        that.processData(data.message);
+        // Send data to any listener
+        that.dispatchDataFeed(data.message);
+      }
+    });
+
+    // TODO: Remove this library when server side methods are enabled
+    // Load buffer library
+    var libPath = that.basePath + 'assets/';
+    // Load Dependencies
+    require([libPath+'buffer.js'], function(buf){
+      // Make it global
+      Buffer = buf.Buffer;
+      console.log("Buffer lib loaded! ");
+    });
+
+    // Load my properties template
+    this.loadTemplate('properties.html').then(function(template){
+      that.propTemplate = template;
+    });
+
+    // Store the list of codes
+    this.codeList = [];
+  };
+
+
+  // TODO: Move this to the block controller
+  function save(){
+    readInterfaceItems.call(this);
+
+    // Capture the basic settings and add them to my object's instance
+    var settings = easy.getValues();
+    // Adding back custom settings object until implmented
+    // TODO: Remove this.
+    console.log("Saving settings: ", settings);
+    settings.Custom = this._tmpCustomObj;
+
+
+    this.settings = settings;
+    this.saveSettings().then(function(){
+      Ppanel.stopLoading();
+    }).catch(function(err){
+      if(!err.errorCode){
+        console.log(err);
+      }else{
+        alert("Error (make me a nice alert please): ", err.message);
+      }
+
+      Ppanel.stopLoading();
+    });
+  }
+
+  function cancelPanel(){
+    this.cancelLoading();
+    this.cancelSaving();
+    Ppanel.stopLoading();
+  }
+
+  IR.onClick = function(){
+    var that = this;
+
+    Ppanel.onSave(save.bind(this));
+    Ppanel.onClose(cancelPanel.bind(this));
+
+    // Display animation
+    Ppanel.loading("Loading settings...");
+    this.loadSettings(function(settings){
+      console.log("Settings: ", settings);
+
+      // Overwrite default event modes
+      settings.EventMode = {
+        property: 'EventMode',
+        items: [
+          { name: "Always", value: 0, selected: (settings.EventMode == 0)?true:false },
+          { name: "OnCode", value: 1, selected: (settings.EventMode == 1)?true:false }
+        ]
+      };
+
+      // TODO: Removing custom object until implemented
+      that._tmpCustomObj = $.extend(true, {}, settings.Custom);
+      // Important: we MUST pass a Custom property
+      // or Easysettings will not display the Custom Settings Menu option
+      settings.Custom = {};
+
+      // available to hardware blocks
+      easy.showBaseSettings(that, settings);
+
+      renderCustomSettings.call(that);
+    });
+  };
+
+  /**
+   * Parent is asking me to execute my logic.
+   * This block only initiate processing with
+   * actions from the hardware.
+   * @param event is an object that contains action and data properties.
+   */
+  IR.onExecute = function(event) {
+    console.log("Execute: ", event);
+    var that = this;
+    var IR_CMD_SEND_RAW = 8510;
+    for(var item of this.codeList){
+      // Only attach the code when it actually happens
+      if(item.name == event.action){
+        // Send Raw
+
+        // TODO: Move this to the server.
+        // Allow clients to call named methods of the block
+
+        // First 2 bytes are the send raw code
+        // 3rd byte indicates the format
+        // 4th byte the size of data
+        // By default we always send the codes in uint32 format
+        var codeBuff = new Buffer(4);
+        var fullMsg = new Buffer(2 + 1 + 1 + codeBuff.length);
+
+        fullMsg.writeUInt16LE(IR_CMD_SEND_RAW);
+        fullMsg[2] = item.format;
+        // Hardware expects BIT length, not byte.
+        fullMsg[3] = codeBuff.length*8;
+        // Write the actual data
+        codeBuff.writeUInt32LE(item.code);
+        // Add the data to the full message
+        codeBuff.copy(fullMsg, 4);
+
+        this.sendData(fullMsg).then(function(res){
+          console.log("Command SENT!");
+        }).catch(function(err){
+          console.log("Error sending command");
+        });
+        break;
+      }
+    }
+  };
+
+  /**
+   * Parent is send new data (using outputs).
+   */
+  IR.onNewData = function(event) {
+    console.log("New data: ", event);
+    // This can be used to send raw infrared signals
+    // using the 'SEND' action
+  };
+
+  // Converts the dom data-index into current array index
+  function _getItemFromIndex(array, index){
+    var res = -1;
+    array.some(function(item, i){
+      if(item.index == index){
+        res = i;
+        return true;
+      }
+    });
+
+    return res;
+  }
+
+  // Removes one item from the array of codes
+  function deleteItem(el){
+    readInterfaceItems.call(this);
+    var that = this;
+    // Since indices change as we add or delete
+    // elements, we MUST search for the actual item
+    that.codeList.splice(_getItemFromIndex(that.codeList, $(el).attr("data-index")), 1);
+
+    renderCustomSettings.call(this);
+  }
+
+  // Starts the flashing animation for the given dom item
+  function __setRecording(item){
+    item.removeClass("green")
+    .removeClass("yellow")
+    .addClass("red")
+    .transition("set looping")
+    .transition('flash', "1000ms");
+  }
+
+  // Removes Animations and clears status flag
+  var __unsetRecording = function(domEl, hasCode){
+    domEl.removeClass("red")
+    .transition("remove looping");
+
+    if(hasCode){
+      domEl.addClass("green")
+    }else{
+      domEl.addClass("yellow")
+    }
+  };
+
+  // Displays/Removes the cording animation
+  function startRecording(el){
+    var index = _getItemFromIndex(this.codeList, $(el).attr("data-index"));
+    var item = this.codeList[index].DOM.find("i.record");
+    var that = this;
+    var hasRecordedCode = (this.codeList[index].code != 0);
+
+    if(this.codeList[index].recording){
+      this.codeList[index].recording = false;
+      __unsetRecording(item, hasRecordedCode);
+    }else{
+      // First we stop any other item that might be in recording mode
+      this.codeList.forEach(function(x, i){
+        that.codeList[i].recording = false;
+        __unsetRecording(that.codeList[i].DOM.find("i.record"), (that.codeList[i].code != 0));
+      });
+
+      this.codeList[index].recording = true;
+      // Clear the previous code
+      this.codeList[index].code = 0;
+      __setRecording(item);
+    }
+
+
+    // TODO: Implement me!
+  }
+
+  // Read the current interface and assign the right
+  // DOM object to the array instances.
+  function readInterfaceItems(){
+    var arr = [];
+    var that = this;
+    this.myPropertiesWindow.find(".record-row").each(function(el){
+      var index = _getItemFromIndex(that.codeList, $(this).attr("data-index"));
+      that.codeList[index].name = $(this).find("input").val();
+    });
+  }
+
+  function addNew(){
+    // 1) Read the interface
+    readInterfaceItems.call(this);
+
+    // add an empty slot
+    this.codeList.push({
+      name: "empty",
+      index: this.codeList.length,
+      code: 0
+    });
+
+
+    renderCustomSettings.call(this);
+  }
+
+
+  function renderCustomSettings(){
+    var that = this;
+    easy.clearCustomSettingsPanel();
+
+    // Compile template using current list
+    this.myPropertiesWindow = $(this.propTemplate({codes: this.codeList}));
+
+    // Buttons Event handlers
+    this.myPropertiesWindow.find("#btAdd").click(addNew.bind(this));
+    this.myPropertiesWindow.find("#btDelete").click(function(){
+      deleteItem.call(that, this);
+    });
+
+    this.myPropertiesWindow.find("#btRecord").click(function(){
+      startRecording.call(that, this);
+    });
+
+    // Display elements
+    easy.displayCustomSettings(this.myPropertiesWindow);
+
+    // Assign the dom element to the array items
+    this.myPropertiesWindow.find(".record-row").each(function(i){
+      var index = _getItemFromIndex(that.codeList, $(this).attr("data-index"));
+      // Replace/Add dom element for the current item
+      that.codeList[index].DOM = $(this);
+      var hasCode = that.codeList[index].code != 0;
+      __unsetRecording(that.codeList[index].DOM.find("i.record"), hasCode);
+
+      if(that.codeList[index].recording){
+        __setRecording(that.codeList[index].DOM.find("i.record"));
+      }
+    });
+  }
+
+  // Searches in the list of
+  function recordCode(blockData){
+    var that = this;
+    this.codeList.some(function(item, index){
+      if(item.recording){
+        item.recording = false;
+        __unsetRecording(item.DOM.find("i.record"), true);
+        item.code = blockData.message.code;
+        item.format = blockData.format.code
+        item.raw = blockData.message.raw;
+        return true;
+      }
+    });
+  }
+
+  function preProcessCodes(event){
+    for(var item of this.codeList){
+      // Only attach the code when it actually happens
+      if(item.code == event.code){
+        event[item.name.toLowerCase()] = true;
+      }
+    };
+  }
+
+  return IR;
+});
