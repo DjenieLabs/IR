@@ -9,7 +9,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   function getCodeList(){
     var list = [];
     for(var action of this.codeList){
-      if(action.code !== 0){
+      if(action.message.code !== 0){
         list.push(action.name);
       }
     }
@@ -36,29 +36,17 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   IR.onLoad = function(){
     var that = this;
     // Subscribe to the hardware events
-    // Hub.subscribe("block:change", this).then(function(event){
-    //   Hub.on(event, function(data){
+
     this.addSubscription('block:change', function(data){
       // Send my data to anyone listening
       // Only send new codes, ignore REPEAT events
       if(data.message.code != 0){
-        if(data.message.raw){
-          // Convert into hex
-          var hex = "0x";
-          for(var c  of data.message.raw){
-            hex += c.toString(16);
-          }
-
-          data.message.raw = hex;
-        }
-
         // Set any item that is in recording mode.
         recordCode.call(that, data);
 
         // Check if the event contains one of the codes
         // we are waiting for.
         preProcessCodes.call(that, data.message);
-
         // Send data to logic maker for processing
         that.processData(data.message);
         // Send data to any listener
@@ -134,7 +122,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
         property: 'EventMode',
         items: [
           { name: "Always", value: 0, selected: (settings.EventMode == 0)?true:false },
-          { name: "OnCode", value: 1, selected: (settings.EventMode == 1)?true:false }
+          { name: "Never", value: 1, selected: (settings.EventMode == 1)?true:false }
         ]
       };
 
@@ -160,35 +148,16 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   IR.onExecute = function(event) {
     console.log("Execute: ", event);
     var that = this;
-    var IR_CMD_SEND_RAW = 8510;
     for(var item of this.codeList){
       // Only attach the code when it actually happens
       if(item.name == event.action){
         // Send Raw
-
-        // TODO: Move this to the server.
-        // Allow clients to call named methods of the block
-
-        // First 2 bytes are the send raw code
-        // 3rd byte indicates the format
-        // 4th byte the size of data
-        // By default we always send the codes in uint32 format
-        var codeBuff = new Buffer(4);
-        var fullMsg = new Buffer(2 + 1 + 1 + codeBuff.length);
-
-        fullMsg.writeUInt16LE(IR_CMD_SEND_RAW);
-        fullMsg[2] = item.format;
-        // Hardware expects BIT length, not byte.
-        fullMsg[3] = codeBuff.length*8;
-        // Write the actual data
-        codeBuff.writeUInt32LE(item.code);
-        // Add the data to the full message
-        codeBuff.copy(fullMsg, 4);
-
-        this.sendData(fullMsg).then(function(res){
-          console.log("Command SENT!");
+        // TODO: Format original message
+        console.log("Sending item.format: ", item.format, "; Item.message: ", item.message);
+        this.APICall("transmitData", [item.format, item.message]).then(function(res){
+          console.log("Transmission OK?: ", res);
         }).catch(function(err){
-          console.log("Error sending command");
+          console.error("Error transmitting: ", err);
         });
         break;
       }
@@ -344,9 +313,8 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       if(item.recording){
         item.recording = false;
         __unsetRecording(item.DOM.find("i.record"), true);
-        item.code = blockData.message.code;
-        item.format = blockData.format.code
-        item.raw = blockData.message.raw;
+        item.message = blockData.message;
+        item.format = blockData.format;
         return true;
       }
     });
@@ -354,9 +322,15 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
 
   function preProcessCodes(event){
     for(var item of this.codeList){
+      // TODO: Detect raw data
       // Only attach the code when it actually happens
-      if(item.code == event.code){
-        event[item.name.toLowerCase()] = true;
+      if(event.code){
+        if(item.message.code == event.code){
+          event[item.name.toLowerCase()] = true;
+        }
+      }else if(event.raw){
+        // Raw analysis
+
       }
     };
   }
