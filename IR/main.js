@@ -64,6 +64,12 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       console.log("Buffer lib loaded! ");
     });
 
+    require([libPath+'protocol-decoder.js'], function(decoder){
+      // Make it global
+      that.controller.Decoder = decoder;
+      console.log("Decoder lib loaded! ");
+    });
+
     // Load my properties template
     this.loadTemplate('properties.html').then(function(template){
       that.propTemplate = template;
@@ -321,6 +327,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   }
 
   function preProcessCodes(event){
+    var that = this;
     for(var item of this.codeList){
       // TODO: Detect raw data
       // Only attach the code when it actually happens
@@ -330,7 +337,10 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
         }
       }else if(event.raw){
         // Raw analysis
-
+        var same = that.controller.Decoder.compareRawArrays(event.raw, item.message.raw);
+        if(same){
+          event[item.name.toLowerCase()] = true;
+        }
       }
     };
   }
