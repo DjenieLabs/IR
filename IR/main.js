@@ -27,6 +27,15 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   };
 
   /**
+   * This method is called when the user hits the "Save"
+   * recipe button. Any object you return will be stored
+   * in the recipe and can be retrieved during startup (@onLoad) time.
+   */
+  IR.onBeforeSave = function(){
+    return {codeList: this.codeList};
+  };
+
+  /**
    * Triggered when added for the first time to the side bar.
    * This script should subscribe to all the events and broadcast
    * to all its copies the data.
@@ -75,8 +84,13 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       that.propTemplate = template;
     });
 
-    // Store the list of codes
-    this.codeList = [];
+    // Load previously stored settings
+    if(this.storedSettings && this.storedSettings.codeList){
+      this.codeList = this.storedSettings.codeList;
+    }else{
+      // Stores the list of codes
+      this.codeList = [];
+    }
   };
 
 
