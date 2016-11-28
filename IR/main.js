@@ -1,5 +1,5 @@
 define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel, RIB){
-  var inputs = ["RAW", "CODE"];
+  var inputs = ["CODE"];
   var actions = ['SEND_RAW'];
 
   var IR = {};
@@ -9,8 +9,10 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   function getCodeList(){
     var list = [];
     for(var action of this.codeList){
-      if(action.message.code !== 0){
-        list.push(action.name);
+      if(action.message){   // Only show items with stored codes
+        if(action.message.code !== 0){
+          list.push(action.name.toLowerCase());
+        }
       }
     }
 
@@ -58,7 +60,14 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
         preProcessCodes.call(that, data.message);
         // Send data to logic maker for processing
         that.processData(data.message);
+
         // Send data to any listener
+        // Mark the other codes as disabled
+        for(var input of that.getInputs()){
+          if(!data.message.hasOwnProperty(input)){
+            data.message[input.toLowerCase()] = false;
+          }
+        }
         that.dispatchDataFeed(data.message);
       }
     });
@@ -94,43 +103,81 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   };
 
 
-  // TODO: Move this to the block controller
-  function save(){
-    readInterfaceItems.call(this);
+  // // TODO: Move this to the block controller
+  // function save(){
+  //   readInterfaceItems.call(this);
+  //
+  //   // Capture the basic settings and add them to my object's instance
+  //   var settings = easy.getValues();
+  //   // Adding back custom settings object until implmented
+  //   // TODO: Remove this.
+  //   console.log("Saving settings: ", settings);
+  //   settings.Custom = this._tmpCustomObj;
+  //
+  //
+  //   this.settings = settings;
+  //   this.saveSettings().then(function(){
+  //     Ppanel.stopLoading();
+  //   }).catch(function(err){
+  //     if(!err.errorCode){
+  //       console.log(err);
+  //     }else{
+  //       alert("Error (make me a nice alert please): ", err.message);
+  //     }
+  //
+  //     Ppanel.stopLoading();
+  //   });
+  // }
 
-    // Capture the basic settings and add them to my object's instance
-    var settings = easy.getValues();
+  // function cancelPanel(){
+  //   this.cancelLoading();
+  //   this.cancelSaving();
+  //   Ppanel.stopLoading();
+  // }
+
+
+  /**
+   * Intercepts the properties panel closing action.
+   * Return "false" to abort the action.
+   * NOTE: Settings Load/Saving will atomatically
+   * stop re-trying if the event propagates.
+   */
+  IR.onCancelProperties = function(){
+    console.log("Cancelling Properties");
+  };
+
+  /**
+   * Intercepts the properties panel save action.
+   * You must call the save method directly for the
+   * new values to be sent to hardware blocks.
+   * @param settings is an object with the values
+   * of the elements rendered in the interface.
+   * NOTE: For the settings object to contain anything
+   * you MUST have rendered the panel using standard
+   * ways (easy.showBaseSettings and easy.renderCustomSettings)
+   */
+  IR.onSaveProperties = function(settings){
+    readInterfaceItems.call(this);
     // Adding back custom settings object until implmented
     // TODO: Remove this.
     console.log("Saving settings: ", settings);
     settings.Custom = this._tmpCustomObj;
 
-
     this.settings = settings;
-    this.saveSettings().then(function(){
-      Ppanel.stopLoading();
-    }).catch(function(err){
+    this.saveSettings().catch(function(err){
       if(!err.errorCode){
         console.log(err);
       }else{
         alert("Error (make me a nice alert please): ", err.message);
       }
-
-      Ppanel.stopLoading();
     });
-  }
-
-  function cancelPanel(){
-    this.cancelLoading();
-    this.cancelSaving();
-    Ppanel.stopLoading();
-  }
+  };
 
   IR.onClick = function(){
     var that = this;
 
-    Ppanel.onSave(save.bind(this));
-    Ppanel.onClose(cancelPanel.bind(this));
+    // Ppanel.onSave(save.bind(this));
+    // Ppanel.onClose(cancelPanel.bind(this));
 
     // Display animation
     Ppanel.loading("Loading settings...");
@@ -329,15 +376,22 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   // Searches in the list of
   function recordCode(blockData){
     var that = this;
+    var newItem = false;
     this.codeList.some(function(item, index){
       if(item.recording){
         item.recording = false;
         __unsetRecording(item.DOM.find("i.record"), true);
-        item.message = blockData.message;
+        item.message = blockData.message;  // Make a clone since we are removing the original raw array
         item.format = blockData.format;
+        newItem = true;
         return true;
       }
     });
+
+    if(newItem){
+      // Make sure any new code is added to the properties feed
+      easy.showDataFeed(this);
+    }
   }
 
   function preProcessCodes(event){
@@ -351,9 +405,11 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
         }
       }else if(event.raw){
         // Raw analysis
-        var same = that.controller.Decoder.compareRawArrays(event.raw, item.message.raw);
-        if(same){
-          event[item.name.toLowerCase()] = true;
+        if(item.message){
+          var same = that.controller.Decoder.compareRawArrays(event.raw, item.message.raw);
+          if(same){
+            event[item.name.toLowerCase()] = true;
+          }
         }
       }
     };
