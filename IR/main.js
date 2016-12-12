@@ -102,40 +102,6 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     }
   };
 
-
-  // // TODO: Move this to the block controller
-  // function save(){
-  //   readInterfaceItems.call(this);
-  //
-  //   // Capture the basic settings and add them to my object's instance
-  //   var settings = easy.getValues();
-  //   // Adding back custom settings object until implmented
-  //   // TODO: Remove this.
-  //   console.log("Saving settings: ", settings);
-  //   settings.Custom = this._tmpCustomObj;
-  //
-  //
-  //   this.settings = settings;
-  //   this.saveSettings().then(function(){
-  //     Ppanel.stopLoading();
-  //   }).catch(function(err){
-  //     if(!err.errorCode){
-  //       console.log(err);
-  //     }else{
-  //       alert("Error (make me a nice alert please): ", err.message);
-  //     }
-  //
-  //     Ppanel.stopLoading();
-  //   });
-  // }
-
-  // function cancelPanel(){
-  //   this.cancelLoading();
-  //   this.cancelSaving();
-  //   Ppanel.stopLoading();
-  // }
-
-
   /**
    * Intercepts the properties panel closing action.
    * Return "false" to abort the action.
@@ -217,7 +183,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     var that = this;
     for(var item of this.codeList){
       // Only attach the code when it actually happens
-      if(item.name == event.action){
+      if(item.name.toLowerCase() == event.action){
         // Send Raw
         // TODO: Format original message
         console.log("Sending item.format: ", item.format, "; Item.message: ", item.message);
