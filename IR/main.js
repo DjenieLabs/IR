@@ -100,6 +100,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       // Stores the list of codes
       this.codeList = [];
     }
+
   };
 
   /**
@@ -137,6 +138,10 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
         alert("Error (make me a nice alert please): ", err.message);
       }
     });
+
+    // Update the input list
+    easy.showDataFeed(this);
+
   };
 
   IR.onClick = function(){
@@ -169,6 +174,9 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       easy.showBaseSettings(that, settings);
 
       renderCustomSettings.call(that);
+
+      easy.openCustomSettingsAccordion();
+
     });
   };
 
@@ -241,6 +249,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
 
   // Removes Animations and clears status flag
   var __unsetRecording = function(domEl, hasCode){
+
     domEl.removeClass("red")
     .transition("remove looping");
 
@@ -249,6 +258,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     }else{
       domEl.addClass("yellow")
     }
+
   };
 
   // Displays/Removes the cording animation
@@ -261,6 +271,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     if(this.codeList[index].recording){
       this.codeList[index].recording = false;
       __unsetRecording(item, hasRecordedCode);
+
     }else{
       // First we stop any other item that might be in recording mode
       this.codeList.forEach(function(x, i){
@@ -272,6 +283,14 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       // Clear the previous code
       this.codeList[index].code = 0;
       __setRecording(item);
+
+      //Show a hint
+      item.popup({
+        content: "Waiting an IR signal...",
+        position: "left center",
+      });
+      item.popup('show');
+
     }
 
 
@@ -295,11 +314,10 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
 
     // add an empty slot
     this.codeList.push({
-      name: "empty",
+      name: "IR-" + (this.codeList.length + 1),
       index: this.codeList.length,
       code: 0
     });
-
 
     renderCustomSettings.call(this);
   }
@@ -346,10 +364,13 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     this.codeList.some(function(item, index){
       if(item.recording){
         item.recording = false;
-        __unsetRecording(item.DOM.find("i.record"), true);
+        var itemDom = item.DOM.find("i.record");
+        __unsetRecording(itemDom, true);
         item.message = blockData.message;  // Make a clone since we are removing the original raw array
         item.format = blockData.format;
         newItem = true;
+
+        itemDom.popup('destroy');
         return true;
       }
     });
@@ -382,4 +403,5 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   }
 
   return IR;
+
 });
