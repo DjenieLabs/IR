@@ -49,6 +49,19 @@ define(function(){
     // TODO: finish this
   };
 
+  function toBinary(arr){
+    var str = "";
+    arr.forEach(function(value){
+      let n = Math.round(value);
+      if(value <= 0){
+        str += "0";
+      }else{
+        str += n;
+      }
+    });
+    console.log("%s\n", str);
+  };
+
   /**
    * Compares 2 arrays based on average burst
    * and value ranges only.
@@ -57,12 +70,13 @@ define(function(){
    */
   Decoder.compareRawArrays = function(a1, a2){
     var burst = _detectBurst(a1);
-    console.log("Burst: ", burst);
     var arr1 = _arrayToBurstList(a1, burst);
-    console.log("Burst List1: ", arr1);
+    console.log("Arr1:");
+    toBinary(arr1);
     var arr2 = _arrayToBurstList(a2, burst);
-    console.log("Burst List2: ", arr2);
-
+    console.log("Arr2:");
+    toBinary(arr2);
+    console.log("\n\n");
     var match = arr1.every(function(item, index){
       if(_inRange(item, arr2[index])){
         return true;
