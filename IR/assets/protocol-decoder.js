@@ -93,7 +93,8 @@ define(function(){
   function findCommon(opt, str, sep){
     var res = [];
     var sp = str.split(sep);
-
+    // Some protocols only send a repeat sequence after the first
+    // command so we need to exclude those
     var checkInside = function(word){
       return !sp.some(function(item){
         if(item.trim() !== ""){
@@ -111,6 +112,11 @@ define(function(){
     return res;
   }
 
+  // returns the current time in milliseconds
+  function millis(){
+    return new Date().getTime();
+  }
+
   /**
    * Finds a common pattern in the given array
    * of timing 
@@ -120,15 +126,33 @@ define(function(){
     // console.log("Burst:", burst);
     // Convert into binary and eliminate overflows
     var burstListBinary = toBinary(arr, burst);
-    // console.log('Binary: ', burstListBinary);
-    var uniqueSequence = findCommon(findSequence(burstListBinary), burstListBinary, "_");
-    if(uniqueSequence.length === 0){
-      console.log("Impossible to find a patter");
+    // Take only the first sequence
+    var baseFormat = burstListBinary.split("__"); 
+    var repeats = baseFormat.length-1;
+    var longest = getLongest(baseFormat);
+    var uniqueSequence = longest.replace(/_/g, '');   //findCommon(findSequence(burstListBinary), burstListBinary, "_");
+
+    var isRepeat = baseFormat.every(function(item){
+      return item.replace(/_/g, '').length == 2;
+    });
+
+    // In case this is a repeat command
+    if(!isRepeat && uniqueSequence.length > 4){
+      Decoder._lastPattern = uniqueSequence;
+      Decoder._lastCode = millis();
+    }else if(isRepeat && Decoder._lastPattern){
+      if( (millis() - Decoder._lastPattern) < 200){
+        uniqueSequence = Decoder._lastPattern;
+      }else{
+        console.log("Old repeat code, ignoring");
+        return false;
+      }
+    }else{
+      console.log("Repeat signal or not supported format/ ", arr);
       return false;
     }
-
-    var longestFromSequence = getLongest(uniqueSequence);
-    return longestFromSequence;
+    
+    return {sequence: uniqueSequence, repeats: repeats};
   };
 
   /**
@@ -141,12 +165,14 @@ define(function(){
   Decoder.compareRawArrays = function(a1, a2){
     var s1 = Decoder.findPattern(a1);
     var s2 = Decoder.findPattern(a2);
+
+    console.log("s1: ", s1);
     if(!s1 || !s2) return false; 
 
-    var s1Seq = getLongest(findSequence(s1));
-    var s2Seq = getLongest(findSequence(s2));
+    // var s1Seq = getLongest(findSequence(s1));
+    // var s2Seq = getLongest(findSequence(s2));
 
-    return s1Seq === s2Seq;
+    return {match: s1.sequence === s2.sequence, repeats: s1.repeats};
   };
 
 

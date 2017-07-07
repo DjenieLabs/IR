@@ -57,19 +57,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
 
         // Check if the event contains one of the codes
         // we are waiting for.
-        if(preProcessCodes.call(that, data.message)) return;
-
-        // Send data to logic maker for processing
-        that.processData(data.message);
-
-        // Send data to any listener
-        // Mark the other codes as disabled
-        for(var input of that.getInputs()){
-          if(!data.message.hasOwnProperty(input)){
-            data.message[input.toLowerCase()] = false;
-          }
-        }
-        that.dispatchDataFeed(data.message);
+        preProcessCodes.call(that, data.message);
       }
     });
 
@@ -364,21 +352,40 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     
     return this.codeList.some(function(item, index){
       if(item.recording){
+        if(!that.controller.Decoder.findPattern(blockData.message.raw).sequence){
+          console.log("ERROR: This remote is not yet supported!");
+          return false;
+        }
+
         item.recording = false;
         var itemDom = item.DOM.find("i.record");
         __unsetRecording(itemDom, true);
         item.message = blockData.message;  // Make a clone since we are removing the original raw array
         item.format = blockData.format;
-        if(!that.controller.Decoder.findPattern(blockData.message.raw)){
-          console.log("ERROR: This remote is not yet supported!");
-        }
         
         itemDom.popup('destroy');
-        // Make sure any new code is added to the properties feed
-        easy.showDataFeed(that);
         return true;
       }
     });
+  }
+
+  // Sends data to the LM and any other listener
+  function dispatchEvent(evt){
+    // Send data to logic maker for processing
+    this.processData(evt);
+
+    // Send data to any listener
+    // Mark the other codes as disabled
+    for(var input of this.getInputs()){
+      if(!evt.hasOwnProperty(input)){
+        evt[input.toLowerCase()] = false;
+      }
+    }
+
+    // Make sure any new code is added to the properties feed
+    easy.showDataFeed(this);
+    
+    this.dispatchDataFeed(evt);
   }
 
   function preProcessCodes(event){
@@ -393,9 +400,18 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       }else if(event.raw && event.raw.length > 2){
         // Raw analysis
         if(item.message){
-          var same = that.controller.Decoder.compareRawArrays(event.raw, item.message.raw);
-          if(same){
-            event[item.name.toLowerCase()] = true;
+          var res = that.controller.Decoder.compareRawArrays(event.raw, item.message.raw);
+          if(res.match){
+            var times = res.repeats;
+            var trigger = function(){
+              if(times-- > 0){
+                event[item.name.toLowerCase()] = true;
+                dispatchEvent.call(this, event);
+                setTimeout(trigger.bind(this), 108);
+              }
+            }
+            
+            return trigger.call(this);
           }
         }
       }
