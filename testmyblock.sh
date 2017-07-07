@@ -4,7 +4,7 @@
 # by Djenie 2016
 
 echo "\033[32m\n\n    __   \n   / /\  \n  / / .\     Replicator\n /_/    \ \n \ \.   /  Community Block\n  \ \  / \n   \_\/  \n\n\n Access your replicator IDE and test your new community block\n\n"
-watch-http-server -p 3080 --cors -c-1
+http-server -p 3080 --cors -c-1
 
 if [ $? -eq 0 ]; then
     exit $?

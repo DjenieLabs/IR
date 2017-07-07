@@ -37,73 +37,139 @@ define(function(){
       if(res.decoded){
         return res;
       }
-    };
+    }
 
     return raw;
   };
 
-  /**
-   * Encodes pre-formated messages
-   */
-  Decoder.formatForSending = function(value, format){
-    // TODO: finish this
-  };
-
-  function toBinary(arr){
+  // Turns an array with formatted values
+  // that are in rage of the givin minimum value,
+  // each item becoming 1 or 0 depending on whether
+  // they are in or out of a predefined range
+  function toBinary(arr, min){
     var str = "";
     arr.forEach(function(value){
-      let n = Math.round(value);
-      if(value <= 0){
-        str += "0";
+      if(Number(value) > min*4){
+        str += "_";
       }else{
-        str += n;
+        var n =_inRange(value, min);
+        str += n?"1":"0";
       }
     });
-    console.log("%s\n", str);
+    return str;
+  }
+
+  function getLongest(arr){
+    var index = 0;
+    var selected = 0;
+    arr.forEach(function(item){
+      if(item.length > index){
+        index = item.length;
+        selected = item;
+      }
+    });
+
+    return selected;
+  }
+
+  function findSequence(str) {
+    return String(str).match(/([^_]+)(?=.*?\1)/g);
+  }
+
+  function trimTo(str, bits){
+    return str.substr(0, 32);
+  }
+
+  /**
+   * Finds unique occurrences of a string from list of options
+   * in another string separated by a character.
+   * @param {*Array} opt is the array of unique options
+   * to look for in the string between the separator.
+   * @param {*String} str the combined string to analyse
+   * @param {*String} sep the separator to look for
+   * 
+   * TODO: This could be achieved by a Regex more efficiently
+   */
+  function findCommon(opt, str, sep){
+    var res = [];
+    var sp = str.split(sep);
+
+    var checkInside = function(word){
+      return !sp.some(function(item){
+        if(item.trim() !== ""){
+          return item.split(word).length !== 2;
+        }
+      });
+    };
+
+    for(var i = 0; i<opt.length; i++){
+      if(checkInside(opt[i])){
+        res.push(opt[i]);
+      }
+    }
+
+    return res;
+  }
+
+  /**
+   * Finds a common pattern in the given array
+   * of timing 
+   */
+  Decoder.findPattern = function(arr){
+    var burst = findSmallest(arr);
+    // console.log("Burst:", burst);
+    // Convert into binary and eliminate overflows
+    var burstListBinary = toBinary(arr, burst);
+    // console.log('Binary: ', burstListBinary);
+    var uniqueSequence = findCommon(findSequence(burstListBinary), burstListBinary, "_");
+    if(uniqueSequence.length === 0){
+      console.log("Impossible to find a patter");
+      return false;
+    }
+
+    var longestFromSequence = getLongest(uniqueSequence);
+    return longestFromSequence;
   };
 
   /**
-   * Compares 2 arrays based on average burst
-   * and value ranges only.
+   * Compares 2 arrays based on average burst.
+   * Extracts the unique sequence from each array
+   * and compares them both.
    * @returns true if both arrays contain the same
-   * data.
+   * sequence.
    */
   Decoder.compareRawArrays = function(a1, a2){
-    var burst = _detectBurst(a1);
-    var arr1 = _arrayToBurstList(a1, burst);
-    console.log("Arr1:");
-    toBinary(arr1);
-    var arr2 = _arrayToBurstList(a2, burst);
-    console.log("Arr2:");
-    toBinary(arr2);
-    console.log("\n\n");
-    var match = arr1.every(function(item, index){
-      if(_inRange(item, arr2[index])){
-        return true;
-      }else{
-        return false;
-      }
-    });
-    
-    return match;
+    var s1 = Decoder.findPattern(a1);
+    var s2 = Decoder.findPattern(a2);
+    if(!s1 || !s2) return false; 
+
+    var s1Seq = getLongest(findSequence(s1));
+    var s2Seq = getLongest(findSequence(s2));
+
+    return s1Seq === s2Seq;
   };
 
 
   // Check if a is within a pre-defined range of b.
   function _inRange(a, b){
-    if( ((b * 0.7) < a) && (a < (b * 1.3) ) ){
+    if( (Number(a) > (Number(b) * 0.7)) && (Number(a) < (Number(b) * 1.3) ) ){
       return true;
     }
 
     return false;
   }
 
+  
+  function isNumeric(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
+  }
+
   // Find the smallest value in the array
-  function _detectBurst(raw){
+  function findSmallest(raw){
     var smallest = Infinity;
     for(var number of raw){
-      if(number < smallest){
-        smallest = number;
+      if(Number(number) < Number(smallest)){
+        smallest = Number(number);
       }
     }
 
