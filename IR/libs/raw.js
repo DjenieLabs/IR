@@ -1,7 +1,7 @@
 /**
  * Written by Alexander Agudelo < alex.agudelo@asurantech.com >, 2017
  * Date: 08/Jul/2017
- * Last Modified: 08/07/2017, 11:53:59 am
+ * Last Modified: 08/07/2017, 2:29:30 pm
  * Modified By: Alexander Agudelo
  * Description:  Decoding of raw timing arrays. This module assumes the given
  * array is not supported by any of the implemented protocols, instead it 
@@ -12,7 +12,7 @@
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential.
  */
-define(['./helpers.js'], function(helper){
+define(['helpers'], function(helper){
     function RAW(){
         this.decode = decode;
         this.compare = compare;
@@ -25,7 +25,8 @@ define(['./helpers.js'], function(helper){
         
         return {
             type: 'RAW',
-            string: p
+            string: p.base,
+            repeat: p.repeat
         };   
     }
     
@@ -94,11 +95,11 @@ define(['./helpers.js'], function(helper){
         // console.log(burstListBinary);
         // Take only the first sequence
         var baseFormat = burstListBinary.split("__"); 
-        var repeats = baseFormat.length-1;
+        var repeats = baseFormat.length;
         var longest = getLongest(baseFormat);
         var uniqueSequence = longest.replace(/_/g, '');
 
-        return uniqueSequence;
+        return {base: uniqueSequence, repeat: repeats};
     };
     
     // Turns an array with formatted values

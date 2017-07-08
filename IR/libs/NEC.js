@@ -1,7 +1,7 @@
 /**
  * Written by Alexander Agudelo < alex.agudelo@asurantech.com >, 2017
  * Date: 08/Jul/2017
- * Last Modified: 08/07/2017, 11:47:55 am
+ * Last Modified: 08/07/2017, 1:52:55 pm
  * Modified By: Alexander Agudelo
  * Description:  Decoder for the NEC protocol:
  *      9ms burst (16 times length of a logical data bit)
@@ -23,7 +23,7 @@
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential.
  */
-define(['./helpers.js'], function(h){
+define(['helpers'], function(h){
     
     function NEC(){
         this.protocol = {
@@ -31,8 +31,9 @@ define(['./helpers.js'], function(h){
             logic0:{burst: 562.5, space: 562.5},
             end: 562.5,
             totalMessage: 108000, /* The duration of a full message */
-            totalData: 67500,    /* The duration of just the data */
-            repeat:{burst: 9000, space: 2250, end: 562.5}
+            totalData: 67500,     /* The duration of just the data */
+            repeat:{burst: 9000, space: 2250, end: 562.5},
+            timeout: 108          /* Timeout between repeats */  
         };
 
         this.decode = decode;

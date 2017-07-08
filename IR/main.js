@@ -61,6 +61,12 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       }
     });
 
+    
+    require.config({
+      baseUrl: that.basePath + 'libs/',
+      catchError: true
+    });
+
     // TODO: Remove this library when server side methods are enabled
     // Load buffer library
     var libPath = that.basePath + 'libs/';
@@ -366,6 +372,9 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
           item.message = decoded;
           item.message.raw = blockData.message.raw;
           itemDom.popup('destroy');
+          if(decoded.type === 'RAW'){
+            console.warn("This protocol is not yet implemented: ", blockData.message.raw);
+          }
           return true;
         }
       }
@@ -412,7 +421,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
               if(times-- > 0){
                 event[item.name.toLowerCase()] = true;
                 dispatchEvent.call(this, event);
-                setTimeout(trigger.bind(this), 108);
+                setTimeout(trigger.bind(this), res.timeout || 100);
               }
             }
             

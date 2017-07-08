@@ -13,12 +13,12 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential.
 // ************************************************************************************************************
-define(['./NEC.js', './RAW.js', './helpers.js'], function(NEC, RAW, helper){
+define(['NEC', 'RAW', 'SAMSUNG', 'helpers'], function(NEC, RAW, SAMSUNG, helper){
   var Decoder = {};
 
   // Contains the list of analysers
   // Add new ones to the array
-  var analysers = [NEC, /** This analyser should be the last **/ RAW];
+  var analysers = [NEC, SAMSUNG,/** This analyser should be the last **/ RAW];
   /**
    * @returns a formatted structure
    * with the decoded code.

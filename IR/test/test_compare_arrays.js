@@ -6,16 +6,11 @@ var assert = require('assert');
 
 var requirejs = require('requirejs');
 requirejs.config({
-  paths:{
-    "decoder": __dirname + "/../libs/protocol-decoder",
-    "NEC": __dirname + '/../libs/NEC',
-    "helper": __dirname + '/../libs/helpers',
-    "RAW": __dirname + '/../libs/RAW',
-  },
+  baseUrl: __dirname + '/../libs/',
   catchError: true
 });
 
-var Decoder = requirejs('decoder');
+var Decoder = requirejs('protocol-decoder');
 
 describe("IR.Decoder", function() {
 
