@@ -13,12 +13,8 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential.
 // ************************************************************************************************************
-define(function(){
+define(['./NEC.js', './RAW.js', './helpers.js'], function(NEC, RAW, helper){
   var Decoder = {};
-
-  var NEC = requirejs('NEC');
-  var RAW = requirejs('RAW'); // Make sure this is always the last analyser to call!
-  var helper = requirejs('helper');
 
   // Contains the list of analysers
   // Add new ones to the array

@@ -1,7 +1,7 @@
 /**
  * Written by Alexander Agudelo < alex.agudelo@asurantech.com >, 2017
  * Date: 08/Jul/2017
- * Last Modified: 08/07/2017, 11:35:13 am
+ * Last Modified: 08/07/2017, 11:53:59 am
  * Modified By: Alexander Agudelo
  * Description:  Decoding of raw timing arrays. This module assumes the given
  * array is not supported by any of the implemented protocols, instead it 
@@ -12,9 +12,7 @@
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential.
  */
-define(function(){
-    var helper = requirejs('helper');
-
+define(['./helpers.js'], function(helper){
     function RAW(){
         this.decode = decode;
         this.compare = compare;
@@ -23,6 +21,8 @@ define(function(){
 
     function decode(raw){
         var p =  findPattern(raw);
+        if(!p) return p;
+        
         return {
             type: 'RAW',
             string: p
@@ -87,6 +87,7 @@ define(function(){
      * of timing 
      */
     function findPattern(arr){
+        if(!arr.length) return false;
         var burst = findSmallest(arr);
         // Convert into binary and eliminate overflows
         var burstListBinary = toBinary(arr, burst);

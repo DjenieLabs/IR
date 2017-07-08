@@ -358,14 +358,16 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
         // }
 
         var decoded = that.controller.Decoder.analyse(blockData.message.raw);
-        item.recording = false;
-        var itemDom = item.DOM.find("i.record");
-        __unsetRecording(itemDom, true);
+        if(decoded){
+          item.recording = false;
+          var itemDom = item.DOM.find("i.record");
+          __unsetRecording(itemDom, true);
 
-        item.message = decoded;
-        item.message.raw = blockData.message.raw;
-        itemDom.popup('destroy');
-        return true;
+          item.message = decoded;
+          item.message.raw = blockData.message.raw;
+          itemDom.popup('destroy');
+          return true;
+        }
       }
     });
   }
@@ -393,7 +395,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     var that = this;
     // Decode the message
     var code = that.controller.Decoder.analyse(event.raw);
-    
+    if(!code) return;
     for(var item of this.codeList){
       if(event.code){
         // TODO: What is this for?
@@ -404,8 +406,8 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
         // Raw analysis
         if(item.message){
           var res = that.controller.Decoder.compareCodes(code, item.message);
-          if(res && res.repeat){
-            var times = res.repeat;
+          if(res){
+            var times = res.repeat || 1;
             var trigger = function(){
               if(times-- > 0){
                 event[item.name.toLowerCase()] = true;
