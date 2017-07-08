@@ -17,11 +17,12 @@ define(function(){
   var Decoder = {};
 
   var NEC = requirejs('NEC');
+  var RAW = requirejs('RAW'); // Make sure this is always the last analyser to call!
   var helper = requirejs('helper');
 
   // Contains the list of analysers
   // Add new ones to the array
-  var analysers = [NEC];
+  var analysers = [NEC, /** This analyser should be the last **/ RAW];
   /**
    * @returns a formatted structure
    * with the decoded code.
@@ -42,133 +43,35 @@ define(function(){
       }
     }
 
-    // At this point the protocol decoder hasn't been implemented
-    // Try a basic pattern decoding
-    var p = Decoder.findPattern(raw);
-    return {
-      type: 'RAW',
-      string: p
-    }
-  };
-
-
-  // Turns an array with formatted values
-  // that are in rage of the givin minimum value,
-  // each item becoming 1 or 0 depending on whether
-  // they are in or out of a predefined range
-  function toBinary(arr, min){
-    var str = "";
-    arr.forEach(function(value){
-      if(Number(value) > min*4){
-        str += "_";
-      }else{
-        var n =helper.inRange(value, min);
-        str += n?"1":"0";
-      }
-    });
-    return str;
-  }
-
-  function getLongest(arr){
-    var index = 0;
-    var selected = 0;
-    arr.forEach(function(item){
-      if(item.length > index){
-        index = item.length;
-        selected = item;
-      }
-    });
-
-    return selected;
-  }
-
-  function findSequence(str) {
-    return String(str).match(/([^_]+)(?=.*?\1)/g);
-  }
-
-
-  /**
-   * Finds unique occurrences of a string from list of options
-   * in another string separated by a character.
-   * @param {*Array} opt is the array of unique options
-   * to look for in the string between the separator.
-   * @param {*String} str the combined string to analyse
-   * @param {*String} sep the separator to look for
-   * 
-   * TODO: This could be achieved by a Regex more efficiently
-   */
-  function findCommon(opt, str, sep){
-    var res = [];
-    var sp = str.split(sep);
-    // Some protocols only send a repeat sequence after the first
-    // command so we need to exclude those
-    var checkInside = function(word){
-      return !sp.some(function(item){
-        if(item.trim() !== ""){
-          return item.split(word).length !== 2;
-        }
-      });
-    };
-
-    for(var i = 0; i<opt.length; i++){
-      if(checkInside(opt[i])){
-        res.push(opt[i]);
-      }
-    }
-
-    return res;
-  }
-
-
-  /**
-   * Finds a common pattern in the given array
-   * of timing 
-   */
-  Decoder.findPattern = function(arr){
-    var burst = findSmallest(arr);
-    // Convert into binary and eliminate overflows
-    var burstListBinary = toBinary(arr, burst);
-    // console.log(burstListBinary);
-    // Take only the first sequence
-    var baseFormat = burstListBinary.split("__"); 
-    var repeats = baseFormat.length-1;
-    var longest = getLongest(baseFormat);
-    var uniqueSequence = longest.replace(/_/g, '');
-
-    return uniqueSequence;
+    console.log("Error analyzing the data: ", raw);
+    return false;
   };
 
 
   /**
-   * Compares 2 arrays based on average burst.
-   * Extracts the unique sequence from each array
-   * and compares them both.
-   * @param a1 is the code to compare
-   * @param a2 is the stored code to compare against
-   * @returns true if both arrays contain the same
-   * sequence.
+   * Decodes both arrays and then compare them.
    */
   Decoder.compareRawArrays = function(a1, a2){
-    var s1 = Decoder.findPattern(a1);
-    var s2 = Decoder.findPattern(a2);
-    console.log("S1: ", s1);
-    console.log("S2: ", s2);
-    if(!s1 || !s2) return false; 
-
-    return s1 === s2;
+    var c1 = this.analyse(a1);
+    var c2 = this.analyse(a2);
+    return this.compareCodes(c1, c2);
   };
 
-  // Find the smallest value in the array
-  function findSmallest(raw){
-    var smallest = Infinity;
-    for(var number of raw){
-      if(Number(number) < Number(smallest)){
-        smallest = Number(number);
+  /**
+   * Checks for 2 codes based on 
+   */
+  Decoder.compareCodes = function(c1, c2){
+    for(var analyser of analysers){
+      var res = analyser.compare(c1, c2);
+      if(res){
+        return res;
       }
     }
 
-    return smallest;
-  }
+    // console.log("Error comparing the codes: ", c1, c2);
+    return false;
+  };
+
   
 
   function Samsung(raw){

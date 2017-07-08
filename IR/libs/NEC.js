@@ -1,7 +1,7 @@
 /**
  * Written by Alexander Agudelo < alex.agudelo@asurantech.com >, 2017
  * Date: 08/Jul/2017
- * Last Modified: 08/07/2017, 10:50:35 am
+ * Last Modified: 08/07/2017, 11:11:26 am
  * Modified By: Alexander Agudelo
  * Description:  Decoder for the NEC protocol:
  *      9ms burst (16 times length of a logical data bit)
@@ -37,8 +37,18 @@ define(function(){
         };
 
         this.decode = decode;
-        
+        this.compare = compare;
+            
         return this;
+    }
+
+    function compare(c1, c2){
+        if(c1.type === 'NEC' && c2.type === 'NEC'){
+            // We don't care about the address, just the command code
+            return c1.command === c2.command;
+        }
+
+        return false;
     }
 
     function decode(raw){

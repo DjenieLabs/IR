@@ -352,17 +352,18 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     
     return this.codeList.some(function(item, index){
       if(item.recording){
-        if(!that.controller.Decoder.findPattern(blockData.message.raw).sequence){
-          console.log("ERROR: This remote is not yet supported!");
-          return false;
-        }
+        // if(!that.controller.Decoder.findPattern(blockData.message.raw).sequence){
+        //   console.log("ERROR: This remote is not yet supported!");
+        //   return false;
+        // }
 
+        var decoded = that.controller.Decoder.analyse(blockData.message.raw);
         item.recording = false;
         var itemDom = item.DOM.find("i.record");
         __unsetRecording(itemDom, true);
-        item.message = blockData.message;  // Make a clone since we are removing the original raw array
-        item.format = blockData.format;
-        
+
+        item.message = decoded;
+        item.message.raw = blockData.message.raw;
         itemDom.popup('destroy');
         return true;
       }
@@ -390,19 +391,21 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
 
   function preProcessCodes(event){
     var that = this;
+    // Decode the message
+    var code = that.controller.Decoder.analyse(event.raw);
+    
     for(var item of this.codeList){
-      // TODO: Detect raw data
-      // Only attach the code when it actually happens
       if(event.code){
+        // TODO: What is this for?
         if(item.message.code == event.code){
           event[item.name.toLowerCase()] = true;
         }
       }else if(event.raw && event.raw.length > 2){
         // Raw analysis
         if(item.message){
-          var res = that.controller.Decoder.compareRawArrays(event.raw, item.message.raw);
-          if(res.match){
-            var times = res.repeats;
+          var res = that.controller.Decoder.compareCodes(code, item.message);
+          if(res && res.repeat){
+            var times = res.repeat;
             var trigger = function(){
               if(times-- > 0){
                 event[item.name.toLowerCase()] = true;
