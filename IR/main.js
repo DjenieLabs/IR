@@ -317,14 +317,47 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     renderCustomSettings.call(this);
   }
 
+  function submitData(){
+    recordCheck.call(this, true);
+    console.log("Sending: ", this.controller._lastEvent);
+    console.log("TO BE IMPLEMENTED!");
+  }
+
+  function recordCheck(send){
+    var choice = this.modalWindow.find(".checkbox").hasClass("checked");
+    this.controller._rememberNext = choice;
+    this.controller._canSend = send === true;
+  }
+
+  function showModal(){
+    if(this.modalWindow && this.controller._lastEvent){
+
+      if(this.controller._rememberNext){
+        if(this.controller._canSend){
+          submitData.call(this);
+        }
+
+        return;
+      }
+
+      this.modalWindow.modal({
+        inverted: true,
+        transition: 'scale',
+        onApprove : submitData.bind(this),
+        onDeny    : recordCheck.bind(this)
+      }).modal('show');
+    }
+  };
 
   function renderCustomSettings(){
     var that = this;
     easy.clearCustomSettingsPanel();
 
     // Compile template using current list
-    this.myPropertiesWindow = $(this.propTemplate({codes: this.codeList}));
-
+    this.myPropertiesWindow = $(this.propTemplate({codes: this.codeList, basePath: this.basePath}));
+    // NOTE: For some reason .find(#msgModal) is not working
+    this.modalWindow = $(this.myPropertiesWindow[0]);
+    
     // Buttons Event handlers
     this.myPropertiesWindow.find("#btAdd").click(addNew.bind(this));
     this.myPropertiesWindow.find("#btDelete").click(function(){
@@ -337,6 +370,9 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
 
     // Display elements
     easy.displayCustomSettings(this.myPropertiesWindow);
+
+    // Remove modal window
+    this.modalWindow.modal('hide');
 
     // Assign the dom element to the array items
     this.myPropertiesWindow.find(".record-row").each(function(i){
@@ -373,7 +409,9 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
           item.message.raw = blockData.message.raw;
           itemDom.popup('destroy');
           if(decoded.type === 'RAW'){
+            that.controller._lastEvent = blockData.message;
             console.warn("This protocol is not yet implemented: ", blockData.message.raw);
+            showModal.call(that);
           }
           return true;
         }
