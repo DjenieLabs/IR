@@ -63,7 +63,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
 
     // TODO: Remove this library when server side methods are enabled
     // Load buffer library
-    var libPath = that.basePath + 'assets/';
+    var libPath = that.basePath + 'libs/';
     // Load Dependencies
     require([libPath+'buffer.js'], function(buf){
       // Make it global

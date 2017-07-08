@@ -15,10 +15,13 @@
 // ************************************************************************************************************
 define(function(){
   var Decoder = {};
+
+  var NEC = requirejs('NEC');
+  var helper = requirejs('helper');
+
   // Contains the list of analysers
   // Add new ones to the array
-  var analysers = [Samsung];
-
+  var analysers = [NEC];
   /**
    * @returns a formatted structure
    * with the decoded code.
@@ -33,14 +36,21 @@ define(function(){
    */
   Decoder.analyse = function(raw){
     for(var analyser of analysers){
-      var res = analyser(raw);
-      if(res.decoded){
+      var res = analyser.decode(raw);
+      if(res){
         return res;
       }
     }
 
-    return raw;
+    // At this point the protocol decoder hasn't been implemented
+    // Try a basic pattern decoding
+    var p = Decoder.findPattern(raw);
+    return {
+      type: 'RAW',
+      string: p
+    }
   };
+
 
   // Turns an array with formatted values
   // that are in rage of the givin minimum value,
@@ -52,7 +62,7 @@ define(function(){
       if(Number(value) > min*4){
         str += "_";
       }else{
-        var n =_inRange(value, min);
+        var n =helper.inRange(value, min);
         str += n?"1":"0";
       }
     });
@@ -76,9 +86,6 @@ define(function(){
     return String(str).match(/([^_]+)(?=.*?\1)/g);
   }
 
-  function trimTo(str, bits){
-    return str.substr(0, 32);
-  }
 
   /**
    * Finds unique occurrences of a string from list of options
@@ -112,10 +119,6 @@ define(function(){
     return res;
   }
 
-  // returns the current time in milliseconds
-  function millis(){
-    return new Date().getTime();
-  }
 
   /**
    * Finds a common pattern in the given array
@@ -123,72 +126,37 @@ define(function(){
    */
   Decoder.findPattern = function(arr){
     var burst = findSmallest(arr);
-    // console.log("Burst:", burst);
     // Convert into binary and eliminate overflows
     var burstListBinary = toBinary(arr, burst);
+    // console.log(burstListBinary);
     // Take only the first sequence
     var baseFormat = burstListBinary.split("__"); 
     var repeats = baseFormat.length-1;
     var longest = getLongest(baseFormat);
-    var uniqueSequence = longest.replace(/_/g, '');   //findCommon(findSequence(burstListBinary), burstListBinary, "_");
+    var uniqueSequence = longest.replace(/_/g, '');
 
-    var isRepeat = baseFormat.every(function(item){
-      return item.replace(/_/g, '').length == 2;
-    });
-
-    // In case this is a repeat command
-    if(!isRepeat && uniqueSequence.length > 4){
-      Decoder._lastPattern = uniqueSequence;
-      Decoder._lastCode = millis();
-    }else if(isRepeat && Decoder._lastPattern){
-      if( (millis() - Decoder._lastPattern) < 200){
-        uniqueSequence = Decoder._lastPattern;
-      }else{
-        console.log("Old repeat code, ignoring");
-        return false;
-      }
-    }else{
-      console.log("Repeat signal or not supported format/ ", arr);
-      return false;
-    }
-    
-    return {sequence: uniqueSequence, repeats: repeats};
+    return uniqueSequence;
   };
+
 
   /**
    * Compares 2 arrays based on average burst.
    * Extracts the unique sequence from each array
    * and compares them both.
+   * @param a1 is the code to compare
+   * @param a2 is the stored code to compare against
    * @returns true if both arrays contain the same
    * sequence.
    */
   Decoder.compareRawArrays = function(a1, a2){
     var s1 = Decoder.findPattern(a1);
     var s2 = Decoder.findPattern(a2);
-
-    console.log("s1: ", s1);
+    console.log("S1: ", s1);
+    console.log("S2: ", s2);
     if(!s1 || !s2) return false; 
 
-    // var s1Seq = getLongest(findSequence(s1));
-    // var s2Seq = getLongest(findSequence(s2));
-
-    return {match: s1.sequence === s2.sequence, repeats: s1.repeats};
+    return s1 === s2;
   };
-
-
-  // Check if a is within a pre-defined range of b.
-  function _inRange(a, b){
-    if( (Number(a) > (Number(b) * 0.7)) && (Number(a) < (Number(b) * 1.3) ) ){
-      return true;
-    }
-
-    return false;
-  }
-
-  
-  function isNumeric(n) {
-    return !isNaN(parseFloat(n)) && isFinite(n);
-  }
 
   // Find the smallest value in the array
   function findSmallest(raw){
@@ -201,19 +169,7 @@ define(function(){
 
     return smallest;
   }
-
-  // @returns an array of the given list
-  // represented in burst packages.
-  function _arrayToBurstList(raw, burst){
-    var list = [];
-    for(var item of raw){
-      list.push(Number(item / burst).toFixed(2));
-    }
-
-    return list;
-  }
-
-  /*************** Analysers *************/
+  
 
   function Samsung(raw){
     /* Tested with Soundbar Remote: AH59-02692E */
@@ -226,11 +182,11 @@ define(function(){
     var off = 590;      // 0.59ms after burst
 
     // Check for sings of the protocol
-    if(_inRange(raw[0], leaderA) && _inRange(raw[1], leaderB)){
+    if(helper.inRange(raw[0], leaderA) && helper.inRange(raw[1], leaderB)){
       // So far so good. Check for a pause BIT after the first 32 bits
       // after the start bursts (leaderA, leaderB)
 
-      if(_inRange(raw[35], leaderA)){
+      if(helper.inRange(raw[35], leaderA)){
         // Stop bit detected, the next 10 bits represent the actual data.
         // The first bit is ignored?
 

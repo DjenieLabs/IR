@@ -25,7 +25,7 @@ describe("IR.Decoder", function() {
       // BB01010100000000000101010000000000010101000000000000000001010101010 35 10000 3 01010100000000000101010000
       var volumeUp_data1 = ["4345","4345","395","395","395","395","395","395","395","395","395","1185","395","1185","395","395","395","395","395","1185","395","1185","395","1185","395","1185","395","395","395","395","395","395","395","395","395","4345","395","395","395","395","395","395","395","395","395","1185","395","1185","395","1185","395","395","395","1185","395","1185","395","1185","395","395","395","395","395","395","395","395","395","1185","395","395","395","395","395","395","395","1185","395","54905","4345","4345","395","395","395","395","395","395","395","395","395","1185","395","1185","395","395","395","395","395","1185","395","1185","395","1185","395","1185","395","395","395","395","395","395","395","395","395","4345","395","395","395","395","395","395","395","395","395","1185","395","1185","395","1185","395","395","395","1185","395","1185","395","1185","395","395","395","395","395","395","395","395","395","1185","395","395","395","395","395","395","395","1185","395","54905","4345","4345","395","395","395","395","395","395","395","395","395","1185","395","1185","395","395","395","395","395","1185","395","1185","395","1185","395","1185","395","395","395","395","395","395","395","395","395","4345"];
 
-      assert.equal(true, Decoder.compareRawArrays(volumeUp_data1, volumeUp_data1));
+      assert.equal(true, Decoder.compareRawArrays(volumeUp_data1, volumeUp_data1).match);
 
       done();
       
@@ -84,8 +84,8 @@ describe("IR.Decoder", function() {
                               "497", "497", "497", "1491", "497", "1491", "497", "497", "497", "1491", 
                               "497", "1491", "497", "1491", "497"];
 
-      assert.equal(true, Decoder.compareRawArrays(channelUp_data1, channelUp_data2));
-      assert.equal(true, Decoder.compareRawArrays(channelUp_data1, channelUp_data3));
+      assert.equal(true, Decoder.compareRawArrays(channelUp_data1, channelUp_data2).match);
+      assert.equal(true, Decoder.compareRawArrays(channelUp_data1, channelUp_data3).match);
       done();
     });
 
@@ -142,8 +142,8 @@ describe("IR.Decoder", function() {
                           "501", "1503", "501", "501", "501", "1503", "501", "1503", "501", "1503", 
                           "501", "1503", "501", "1503", "501"];
 
-      assert.equal(true, Decoder.compareRawArrays(NumOne_data1, NumOne_data2));
-      assert.equal(true, Decoder.compareRawArrays(NumOne_data1, NumOne_data3));
+      assert.equal(true, Decoder.compareRawArrays(NumOne_data1, NumOne_data2).match);
+      assert.equal(true, Decoder.compareRawArrays(NumOne_data1, NumOne_data3).match);
       done();
     });
 
@@ -197,8 +197,8 @@ describe("IR.Decoder", function() {
                           "497", "497", "497", "1491", "497", "1491", "497", "1491", "497", "1491", 
                           "497", "1491", "497", "1491", "497"];
 
-      assert.equal(true, Decoder.compareRawArrays(powerButton_data1, powerButton_data2));
-      assert.equal(true, Decoder.compareRawArrays(powerButton_data1, powerButton_data3));
+      assert.equal(true, Decoder.compareRawArrays(powerButton_data1, powerButton_data2).match);
+      assert.equal(true, Decoder.compareRawArrays(powerButton_data1, powerButton_data3).match);
       done();
     });
 
@@ -222,17 +222,17 @@ describe("IR.Decoder", function() {
       // decoded: _01011111001111111110011111111111111001__01011111001111111110011111111111111001__01011111001111111110011111111111111001__01011111001111111110011111111111111001
       let num2_v3 = ["2485","710","355","710","355","355","355","355","355","710","710","355","355","355","355","355","355","355","355","355","710","710","355","355","355","355","355","355","355","355","355","355","355","355","355","355","710","710","355","84135","2485","710","355","710","355","355","355","355","355","710","710","355","355","355","355","355","355","355","355","355","710","710","355","355","355","355","355","355","355","355","355","355","355","355","355","355","710","710","355","84135","2485","710","355","710","355","355","355","355","355","710","710","355","355","355","355","355","355","355","355","355","710","710","355","355","355","355","355","355","355","355","355","355","355","355","355","355","710","710","355","84135","2485","710","355","710","355","355","355","355","355","710","710","355","355","355","355","355","355","355","355","355","710","710","355","355","355","355","355","355","355","355","355","355","355","355","355","355","710","710","355"];
       
-      assert.equal(Decoder.compareRawArrays(num1_v1, num1_v2), true); 
-      assert.equal(Decoder.compareRawArrays(num2_v1, num2_v2), true);    
-      assert.equal(Decoder.compareRawArrays(num2_v2, num2_v3), true);    
-      assert.equal(Decoder.compareRawArrays(num2_v1, num2_v3), true);    
+      assert.equal(Decoder.compareRawArrays(num1_v1, num1_v2).match, true); 
+      assert.equal(Decoder.compareRawArrays(num2_v1, num2_v2).match, true);  
+      assert.equal(Decoder.compareRawArrays(num2_v2, num2_v3).match, true);  
+      assert.equal(Decoder.compareRawArrays(num2_v1, num2_v3).match, true);  
 
-      assert.equal(Decoder.compareRawArrays(num1_v1, num2_v1), false);    
-      assert.equal(Decoder.compareRawArrays(num1_v1, num2_v2), false);    
-      assert.equal(Decoder.compareRawArrays(num1_v1, num2_v3), false);    
-      assert.equal(Decoder.compareRawArrays(num1_v2, num2_v1), false);    
-      assert.equal(Decoder.compareRawArrays(num1_v2, num2_v2), false);    
-      assert.equal(Decoder.compareRawArrays(num1_v2, num2_v3), false);    
+      assert.equal(Decoder.compareRawArrays(num1_v1, num2_v1).match, false);
+      assert.equal(Decoder.compareRawArrays(num1_v1, num2_v2).match, false);
+      assert.equal(Decoder.compareRawArrays(num1_v1, num2_v3).match, false);
+      assert.equal(Decoder.compareRawArrays(num1_v2, num2_v1).match, false);
+      assert.equal(Decoder.compareRawArrays(num1_v2, num2_v2).match, false);
+      assert.equal(Decoder.compareRawArrays(num1_v2, num2_v3).match, false);
 
       done();
     });
