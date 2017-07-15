@@ -51,7 +51,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     this.addSubscription('block:change', function(data){
       // Send my data to anyone listening
       // Only send new codes, ignore REPEAT events
-      if(data.message.code != 0){
+      if (data.message.code !== 0) {
         // Set any item that is in recording mode.
         recordCode.call(that, data);
 
@@ -175,8 +175,8 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       settings.EventMode = {
         property: 'EventMode',
         items: [
-          { name: "Always", value: 0, selected: (settings.EventMode == 0)?true:false },
-          { name: "Never", value: 1, selected: (settings.EventMode == 1)?true:false }
+          { name: "Always", value: 0, selected: (settings.EventMode === 0)?true:false },
+          { name: "Never", value: 1, selected: (settings.EventMode === 1)?true:false }
         ]
       };
 
@@ -205,17 +205,18 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   IR.onExecute = function(event) {
     console.log("Execute: ", event);
     var that = this;
+    var apiCalled = function(response) {
+      console.log("Transmission OK?: ", response);
+    };
     for(var item of this.codeList){
       // Only attach the code when it actually happens
       if(item.name.toLowerCase() == event.action){
         // Send Raw
         // TODO: Format original message
         console.log("Sending item.format: ", item.format, "; Item.message: ", item.message);
-        this.APICall("transmitData", [item.format, item.message]).then(function(res){
-          console.log("Transmission OK?: ", res);
-        }).catch(function(err){
-          console.error("Error transmitting: ", err);
-        });
+        this.APICall("transmitData", [item.format, item.message])
+          .then( apiCalled(res) )
+          .catch( apiCalled(err) );
         break;
       }
     }
@@ -270,9 +271,9 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     .transition("remove looping");
 
     if(hasCode){
-      domEl.addClass("green")
+      domEl.addClass("green");
     }else{
-      domEl.addClass("yellow")
+      domEl.addClass("yellow");
     }
 
   };
@@ -282,7 +283,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     var index = _getItemFromIndex(this.codeList, $(el).attr("data-index"));
     var item = this.codeList[index].DOM.find("i.record");
     var that = this;
-    var hasRecordedCode = (this.codeList[index].code != 0);
+    var hasRecordedCode = (this.codeList[index].code !== 0);
 
     if(this.codeList[index].recording){
       this.codeList[index].recording = false;
@@ -292,7 +293,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       // First we stop any other item that might be in recording mode
       this.codeList.forEach(function(x, i){
         that.codeList[i].recording = false;
-        __unsetRecording(that.codeList[i].DOM.find("i.record"), (that.codeList[i].code != 0));
+        __unsetRecording(that.codeList[i].DOM.find("i.record"), (that.codeList[i].code !== 0));
       });
 
       this.codeList[index].recording = true;
@@ -368,7 +369,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
         onDeny    : recordCheck.bind(this)
       }).modal('show');
     }
-  };
+  }
 
   function renderCustomSettings(){
     var that = this;
@@ -418,7 +419,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       var index = _getItemFromIndex(that.codeList, $(this).attr("data-index"));
       // Replace/Add dom element for the current item
       that.codeList[index].DOM = $(this);
-      var hasCode = that.codeList[index].code != 0;
+      var hasCode = that.codeList[index].code !== 0;
       __unsetRecording(that.codeList[index].DOM.find("i.record"), hasCode);
 
       if(that.codeList[index].recording){
@@ -501,13 +502,13 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
                 dispatchEvent.call(this, event);
                 setTimeout(trigger.bind(this), res.timeout || 100);
               }
-            }
+            };
             
             return trigger.call(this);
           }
         }
       }
-    };
+    }
   }
 
   return IR;

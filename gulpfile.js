@@ -7,7 +7,8 @@ var gulp = require('gulp'),
 gulp.task('qualitychecker', function(cb) {
     return gulp.src([
       '**/*.js',
-      '!node_modules/**/*.js'])
+      '!node_modules/**/*.js',
+      '!IR/libs/**/*.js'])
     .pipe(jshint({esversion: 6}))
     .pipe(jshint.reporter('default'))
     .on('error', gutil.log);
