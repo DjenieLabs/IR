@@ -96,6 +96,20 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       this.codeList = [];
     }
 
+    this.lastRawData = '';
+
+    var missing = IR.hasMissingProperties.call(this);
+    if ( missing ) {
+      this.displayState('warning', 'Add some IR code...');
+    } else {
+      this.clearState();
+    }
+
+  };
+
+  IR.hasMissingProperties = function() {
+    var missing = this.codeList.length === 0;
+    return missing;
   };
 
   /**
@@ -136,6 +150,13 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
 
     // Update the input list
     easy.showDataFeed(this);
+
+    var missing = IR.hasMissingProperties.call(this);
+    if ( missing ) {
+      this.displayState('warning', 'Add some IR code...');
+    } else {
+      this.clearState();
+    }
 
   };
 
@@ -368,6 +389,24 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       startRecording.call(that, this);
     });
 
+    this.myPropertiesWindow.find("#senddata-btn").click(function(){
+      var email = { to: 'alex.agudelo@djenie.com',
+                    text: "[" +that.lastRawData.toString() + "]",
+                    subject: 'IR: Protocol not implemented' };
+      $.ajax({
+          type: 'POST', crossDomain: true,
+          url: 'http://replicatorcloud.na-inter.net/emailsender/send/',
+          xhrFields: {withCredentials: false},
+          data: email,
+          success: function(msg) {
+            console.log("email sent to: ", email);
+          },
+          error: function(jqXHR, status, error) {
+            console.log("error sending email: ", error);
+          }
+      });
+    });
+
     // Display elements
     easy.displayCustomSettings(this.myPropertiesWindow);
 
@@ -407,6 +446,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
 
           item.message = decoded;
           item.message.raw = blockData.message.raw;
+          that.lastRawData = blockData.message.raw;
           itemDom.popup('destroy');
           if(decoded.type === 'RAW'){
             that.controller._lastEvent = blockData.message;
