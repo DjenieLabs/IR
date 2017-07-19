@@ -28,6 +28,16 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     return inputs.concat(newInputs);
   };
 
+  IR.getDefaultInput = function() {
+    if (this.Decoder && this.Decoder.controller) {
+      var newInputs = getCodeList.call(this.Decoder.controller);
+      if ( newInputs.length > 0 ) {
+        return newInputs[0];
+      }
+    }
+    return false;
+  };
+
   /**
    * This method is called when the user hits the "Save"
    * recipe button. Any object you return will be stored
@@ -80,6 +90,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     require([libPath+'protocol-decoder.js'], function(decoder){
       // Make it global
       that.controller.Decoder = decoder;
+      that.controller.Decoder.controller = that;
       console.log("Decoder lib loaded! ");
     });
 
