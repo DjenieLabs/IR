@@ -23,17 +23,23 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     return actions.concat(getCodeList.call(this));
   };
 
+  IR.getDefaultAction = function() {
+    var newActions = getCodeList.call(this);
+    if ( newActions.length > 0 ) {
+      return newActions[0];
+    }
+    return false;
+  };
+
   IR.getInputs = function() {
     var newInputs = getCodeList.call(this);
     return inputs.concat(newInputs);
   };
 
   IR.getDefaultInput = function() {
-    if (this.Decoder && this.Decoder.controller) {
-      var newInputs = getCodeList.call(this.Decoder.controller);
-      if ( newInputs.length > 0 ) {
-        return newInputs[0];
-      }
+    var newInputs = getCodeList.call(this);
+    if ( newInputs.length > 0 ) {
+      return newInputs[0];
     }
     return false;
   };
