@@ -222,18 +222,17 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   IR.onExecute = function(event) {
     console.log("Execute: ", event);
     var that = this;
-    var apiCalled = function(response) {
-      console.log("Transmission OK?: ", response);
-    };
     for(var item of this.codeList){
       // Only attach the code when it actually happens
       if(item.name.toLowerCase() == event.action){
         // Send Raw
         // TODO: Format original message
         console.log("Sending item.format: ", item.format, "; Item.message: ", item.message);
-        this.APICall("transmitData", [item.format, item.message])
-          .then( apiCalled(res) )
-          .catch( apiCalled(err) );
+        this.APICall("transmitData", [item.format, item.message]).then(function(res) {
+          console.log("Transmission OK?: ", res);
+        }).catch(function(err){
+          console.error("Error transmitting: ", err);
+        });
         break;
       }
     }
