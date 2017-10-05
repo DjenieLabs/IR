@@ -6,7 +6,7 @@
   "authors": [
     "Alexander Agudelo"
   ],
-  "main": "main.js",
+  "main": "dist/main.js",
   "keywords": [],
   "license": "MIT"
 }
