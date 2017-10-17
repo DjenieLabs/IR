@@ -114,14 +114,6 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     }
 
     this.lastRawData = '';
-
-    var missing = IR.hasMissingProperties.call(this);
-    if ( missing ) {
-      this.displayState('warning', 'Add some IR code...');
-    } else {
-      this.clearState();
-    }
-
   };
 
   IR.hasMissingProperties = function() {
@@ -501,7 +493,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     console.log(JSON.stringify(event.raw));
     var code = that.controller.Decoder.analyse(event.raw);
     if(!code) return;
-    console.log("Code: ", code.type);
+    console.log("Code: %s, Command: %d, Address: %d, String: %s", code.type, code.command, code.address, code.string);
     for(var item of this.codeList){
       if(event.code){
         // TODO: What is this for?
