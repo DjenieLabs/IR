@@ -87,11 +87,6 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     // Load buffer library
     var libPath = that.basePath + 'libs/';
     // Load Dependencies
-    require([libPath+'buffer.js'], function(buf){
-      // Make it global
-      Buffer = buf.Buffer;
-      console.log("Buffer lib loaded! ");
-    });
 
     require([libPath+'protocol-decoder.js'], function(decoder){
       // Make it global
