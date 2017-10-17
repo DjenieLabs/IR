@@ -125,8 +125,8 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   };
 
   IR.hasMissingProperties = function() {
-    var missing = this.codeList.length === 0;
-    return missing;
+    // var missing = this.codeList.length === 0;
+    return false;
   };
 
   /**
@@ -498,8 +498,10 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   function preProcessCodes(event){
     var that = this;
     // Decode the message
+    console.log(JSON.stringify(event.raw));
     var code = that.controller.Decoder.analyse(event.raw);
     if(!code) return;
+    console.log("Code: ", code.type);
     for(var item of this.codeList){
       if(event.code){
         // TODO: What is this for?

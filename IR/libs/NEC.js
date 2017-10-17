@@ -1,7 +1,7 @@
 /**
  * Written by Alexander Agudelo < alex.agudelo@asurantech.com >, 2017
  * Date: 08/Jul/2017
- * Last Modified: 08/07/2017, 1:52:55 pm
+ * Last Modified: 17/10/2017, 12:11:43 pm
  * Modified By: Alexander Agudelo
  * Description:  Decoder for the NEC protocol:
  *      9ms burst (16 times length of a logical data bit)
@@ -75,6 +75,18 @@ define(['helpers'], function(h){
                 
                 return res;
             }
+        }else{
+            // Try to find the header
+            var that = this;
+            var found = false;
+            raw.some(function (time, index){
+                if(h.inRange(raw[index], 9000)){
+                    found = decode.call(that, raw.slice(index));
+                    return true;
+                }
+            });
+
+            return found;
         }
 
         return false;

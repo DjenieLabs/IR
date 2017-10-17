@@ -50,6 +50,7 @@ define(['NEC', 'RAW', 'SAMSUNG', 'helpers'], function(NEC, RAW, SAMSUNG, helper)
   Decoder.compareRawArrays = function(a1, a2){
     var c1 = this.analyse(a1);
     var c2 = this.analyse(a2);
+    console.log("A1: %s, A2: %s", c1.type, c2.type);
     return this.compareCodes(c1, c2);
   };
 
