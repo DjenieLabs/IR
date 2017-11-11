@@ -50,7 +50,7 @@ define(['NEC', 'RAW', 'SAMSUNG', 'helpers'], function(NEC, RAW, SAMSUNG, helper)
   Decoder.compareRawArrays = function(a1, a2){
     var c1 = this.analyse(a1);
     var c2 = this.analyse(a2);
-    console.log("A1: %s, A2: %s", c1.type, c2.type);
+    // console.log("A1: %s, A2: %s", c1.type, c2.type);
     return this.compareCodes(c1, c2);
   };
 
@@ -68,48 +68,6 @@ define(['NEC', 'RAW', 'SAMSUNG', 'helpers'], function(NEC, RAW, SAMSUNG, helper)
     // console.log("Error comparing the codes: ", c1, c2);
     return false;
   };
-
-  
-
-  function Samsung(raw){
-    /* Tested with Soundbar Remote: AH59-02692E */
-
-    var burst = 590;
-    var leaderA = 4500; // 4.5ms ON
-    var leaderB = 4500; // 4.5ms OFF
-    var freq = 38;      // 38khz carrier wave
-    var on = 1690;      // 1.69ms after Burst
-    var off = 590;      // 0.59ms after burst
-
-    // Check for sings of the protocol
-    if(helper.inRange(raw[0], leaderA) && helper.inRange(raw[1], leaderB)){
-      // So far so good. Check for a pause BIT after the first 32 bits
-      // after the start bursts (leaderA, leaderB)
-
-      if(helper.inRange(raw[35], leaderA)){
-        // Stop bit detected, the next 10 bits represent the actual data.
-        // The first bit is ignored?
-
-        var code = 0;
-
-        // Pre-build the object
-        var response = {
-          format: "Samsung",
-          carrier: freq,
-          leaderA: leaderA,
-          leaderB: leaderB,
-          burst: burst,
-          logic1: on,
-          logic2: off,
-          code: code
-        };
-
-        return response;
-      }
-    }
-
-    return raw;
-  }
 
 
 

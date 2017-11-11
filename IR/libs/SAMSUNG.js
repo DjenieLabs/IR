@@ -1,7 +1,7 @@
 /**
  * Written by Alexander Agudelo < alex.agudelo@asurantech.com >, 2017
  * Date: 08/Jul/2017
- * Last Modified: 08/07/2017, 1:53:07 pm
+ * Last Modified: 11/11/2017, 1:09:34 pm
  * Modified By: Alexander Agudelo
  * Description:  Samsung protocol decoder:
  *      37.9Kz
@@ -89,7 +89,7 @@ define(['helpers'], function(helper){
             repeat: d.split("_").length-1
         };
 
-        res.code = parseInt(res.string, 2);
+        res.command = parseInt(res.string, 2);
         
         return res;
     }

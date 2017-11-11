@@ -1,7 +1,7 @@
 /**
  * Written by Alexander Agudelo < alex.agudelo@asurantech.com >, 2017
  * Date: 08/Jul/2017
- * Last Modified: 08/07/2017, 2:29:30 pm
+ * Last Modified: 10/11/2017, 10:24:12 am
  * Modified By: Alexander Agudelo
  * Description:  Decoding of raw timing arrays. This module assumes the given
  * array is not supported by any of the implemented protocols, instead it 

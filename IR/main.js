@@ -486,30 +486,18 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     var that = this;
     // Decode the message
     console.log(JSON.stringify(event.raw));
-    var code = that.controller.Decoder.analyse(event.raw);
-    if(!code) return;
-    console.log("Code: %s, Command: %d, Address: %d, String: %s", code.type, code.command, code.address, code.string);
+    var decoded = that.controller.Decoder.analyse(event.raw);
+    if(!decoded) return;
+    console.log("Code: %s, Command: %d, String: %s", decoded.type, decoded.command, decoded.string);
     for(var item of this.codeList){
-      if(event.code){
-        // TODO: What is this for?
-        if(item.message.code == event.code){
-          event[item.name.toLowerCase()] = true;
-        }
-      }else if(event.raw && event.raw.length > 2){
+     if(event.raw && event.raw.length > 2){
         // Raw analysis
         if(item.message){
-          var res = that.controller.Decoder.compareCodes(code, item.message);
+          var res = that.controller.Decoder.compareCodes(decoded, item.message);
           if(res){
-            var times = res.repeat || 1;
-            var trigger = function(){
-              if(times-- > 0){
-                event[item.name.toLowerCase()] = true;
-                dispatchEvent.call(this, event);
-                setTimeout(trigger.bind(this), res.timeout || 100);
-              }
-            };
-            
-            return trigger.call(this);
+            // return trigger.call(this);
+            event[item.name.toLowerCase()] = true;
+            dispatchEvent.call(this, event);
           }
         }
       }
