@@ -1,5 +1,5 @@
 define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel, RIB){
-  var inputs = ["CODE"];
+  var inputs = ["ANY"];
   var actions = ['SEND_RAW'];
 
   var IR = {};
@@ -10,7 +10,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     var list = [];
     for(var action of this.codeList){
       if(action.message){   // Only show items with stored codes
-        if(action.message.code !== 0){
+        if(action.message !== undefined){
           list.push(action.name.toLowerCase());
         }
       }
@@ -66,34 +66,16 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
 
     this.addSubscription('block:change', function(data){
       // Send my data to anyone listening
-      // Only send new codes, ignore REPEAT events
-      if (data.message.code !== 0) {
+      if (data.type) {
         // Set any item that is in recording mode.
         recordCode.call(that, data);
 
         // Check if the event contains one of the codes
         // we are waiting for.
-        preProcessCodes.call(that, data.message);
+        preProcessCodes.call(that, data);
       }
     });
 
-    
-    require.config({
-      baseUrl: that.basePath + 'libs/',
-      catchError: true
-    });
-
-    // TODO: Remove this library when server side methods are enabled
-    // Load buffer library
-    var libPath = that.basePath + 'libs/';
-    // Load Dependencies
-
-    require([libPath+'protocol-decoder.js'], function(decoder){
-      // Make it global
-      that.controller.Decoder = decoder;
-      that.controller.Decoder.controller = that;
-      console.log("Decoder lib loaded! ");
-    });
 
     // Load my properties template
     this.loadTemplate('properties.html').then(function(template){
@@ -119,7 +101,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   /**
    * Intercepts the properties panel closing action.
    * Return "false" to abort the action.
-   * NOTE: Settings Load/Saving will atomatically
+   * NOTE: Settings Load/Saving will automatically
    * stop re-trying if the event propagates.
    */
   IR.onCancelProperties = function(){
@@ -286,7 +268,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     var index = _getItemFromIndex(this.codeList, $(el).attr("data-index"));
     var item = this.codeList[index].DOM.find("i.record");
     var that = this;
-    var hasRecordedCode = (this.codeList[index].code !== 0);
+    var hasRecordedCode = (this.codeList[index].message !== undefined);
 
     if(this.codeList[index].recording){
       this.codeList[index].recording = false;
@@ -296,12 +278,12 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       // First we stop any other item that might be in recording mode
       this.codeList.forEach(function(x, i){
         that.codeList[i].recording = false;
-        __unsetRecording(that.codeList[i].DOM.find("i.record"), (that.codeList[i].code !== 0));
+        __unsetRecording(that.codeList[i].DOM.find("i.record"), (that.codeList[i].message !== undefined));
       });
 
       this.codeList[index].recording = true;
       // Clear the previous code
-      this.codeList[index].code = 0;
+      delete this.codeList[index].message;
       __setRecording(item);
 
       //Show a hint
@@ -335,8 +317,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     // add an empty slot
     this.codeList.push({
       name: "IR-" + (this.codeList.length + 1),
-      index: this.codeList.length,
-      code: 0
+      index: this.codeList.length
     });
 
     renderCustomSettings.call(this);
@@ -422,7 +403,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       var index = _getItemFromIndex(that.codeList, $(this).attr("data-index"));
       // Replace/Add dom element for the current item
       that.codeList[index].DOM = $(this);
-      var hasCode = that.codeList[index].code !== 0;
+      var hasCode = that.codeList[index].message !== undefined;
       __unsetRecording(that.codeList[index].DOM.find("i.record"), hasCode);
 
       if(that.codeList[index].recording){
@@ -442,23 +423,23 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
         //   return false;
         // }
 
-        var decoded = that.controller.Decoder.analyse(blockData.message.raw);
-        if(decoded){
-          item.recording = false;
-          var itemDom = item.DOM.find("i.record");
-          __unsetRecording(itemDom, true);
+        // var decoded = that.controller.Decoder.analyse(blockData.message.raw);
+        // if(blockData.type !== RAW){
+        item.recording = false;
+        var itemDom = item.DOM.find("i.record");
+        __unsetRecording(itemDom, true);
 
-          item.message = decoded;
-          item.message.raw = blockData.message.raw;
-          that.lastRawData = blockData.message.raw;
-          itemDom.popup('destroy');
-          if(decoded.type === 'RAW'){
-            that.controller._lastEvent = blockData.message;
-            console.warn("This protocol is not yet implemented: ", blockData.message.raw);
-            showModal.call(that);
-          }
-          return true;
+        item.message = blockData;
+        // item.message.raw = blockData.raw;
+        that.lastRawData = blockData.raw;
+        itemDom.popup('destroy');
+        if(blockData.type === 'RAW'){
+          that.controller._lastEvent = blockData;
+          console.warn("This protocol is not yet implemented: ", blockData.raw);
+          showModal.call(that);
         }
+        return true;
+        // }
       }
     });
   }
@@ -466,12 +447,15 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   // Sends data to the LM and any other listener
   function dispatchEvent(evt){
     // Send data to logic maker for processing
-    this.processData(evt);
+    // only if any of the codes were recognised
+    if(Object.keys(evt).length){
+      this.processData(evt);  
+    }
 
     // Send data to any listener
     // Mark the other codes as disabled
     for(var input of this.getInputs()){
-      if(!evt.hasOwnProperty(input)){
+      if(!evt.hasOwnProperty(input.toLowerCase())){
         evt[input.toLowerCase()] = false;
       }
     }
@@ -485,23 +469,30 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
   function preProcessCodes(event){
     var that = this;
     // Decode the message
-    console.log(JSON.stringify(event.raw));
-    var decoded = that.controller.Decoder.analyse(event.raw);
-    if(!decoded) return;
-    console.log("Code: %s, Command: %d, String: %s", decoded.type, decoded.command, decoded.string);
+    console.log(JSON.stringify(event));
+
+    var action = {};
     for(var item of this.codeList){
      if(event.raw && event.raw.length > 2){
         // Raw analysis
         if(item.message){
-          var res = that.controller.Decoder.compareCodes(decoded, item.message);
-          if(res){
-            // return trigger.call(this);
-            event[item.name.toLowerCase()] = true;
-            dispatchEvent.call(this, event);
+          // clone objects and remove raw data 
+          var obj1 = {};
+          var obj2 = {};
+          Object.assign(obj1, item.message);
+          Object.assign(obj2, event);
+          delete obj1.raw;
+          delete obj2.raw;
+
+          if(JSON.stringify(obj1) === JSON.stringify(obj2)){
+            action[item.name.toLowerCase()] = true;
+            action.any = true;
           }
         }
       }
     }
+
+    dispatchEvent.call(this, action);
   }
 
   return IR;
