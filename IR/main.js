@@ -196,8 +196,8 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
       if(item.name.toLowerCase() == event.action){
         // Send Raw
         // TODO: Format original message
-        console.log("Sending item.format: ", item.format, "; Item.message: ", item.message);
-        this.APICall("transmitData", [item.format, item.message]).then(function(res) {
+        console.log("Sending item: ", item.message);
+        this.APICall("transmitData", [item.message.raw]).then(function(res) {
           console.log("Transmission OK?: ", res);
         }).catch(function(err){
           console.error("Error transmitting: ", err);
@@ -375,7 +375,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     });
 
     this.myPropertiesWindow.find("#senddata-btn").click(function(){
-      var email = { to: 'alex.agudelo@djenie.com',
+      var email = { to: 'alex.agudelo@kitsunei.com',
                     text: "[" +that.lastRawData.toString() + "]",
                     subject: 'IR: Protocol not implemented' };
       $.ajax({
@@ -461,7 +461,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     }
 
     // Make sure any new code is added to the properties feed
-    easy.showDataFeed(this);
+//     easy.showDataFeed(this);
     
     this.dispatchDataFeed(evt);
   }
