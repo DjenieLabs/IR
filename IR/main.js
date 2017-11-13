@@ -1,6 +1,6 @@
 define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel, RIB){
   var inputs = ["ANY"];
-  var actions = ['SEND_RAW'];
+  var actions = ['SET_FREQ'];
 
   var IR = {};
   var _stopLoading = false;
@@ -50,7 +50,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
    * in the recipe and can be retrieved during startup (@onLoad) time.
    */
   IR.onBeforeSave = function(){
-    return {codeList: this.codeList};
+    return {codeList: this.codeList, defaultFreq: this.defaultFreq};
   };
 
   /**
@@ -85,9 +85,11 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
     // Load previously stored settings
     if(this.storedSettings && this.storedSettings.codeList){
       this.codeList = this.storedSettings.codeList;
+      this.defaultFreq = this.storedSettings.defaultFreq || 38;
     }else{
       // Stores the list of codes
       this.codeList = [];
+      this.defaultFreq = 38;
     }
 
     this.lastRawData = '';
@@ -190,6 +192,11 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
    */
   IR.onExecute = function(event) {
     console.log("Execute: ", event);
+    if(event.action === 'SET_FREQ'){
+      this.defaultFreq = Number(event.data);
+      console.log("Frequency set to %d Khz", this.defaultFreq);
+      return;
+    }
     var that = this;
     for(var item of this.codeList){
       // Only attach the code when it actually happens
@@ -197,7 +204,7 @@ define(['HubLink', 'Easy', 'PropertiesPanel', 'RIB'], function(Hub, easy, Ppanel
         // Send Raw
         // TODO: Format original message
         console.log("Sending item: ", item.message);
-        this.APICall("transmitData", [item.message.raw]).then(function(res) {
+        this.APICall("transmitData", [item.message.raw, that.defaultFreq]).then(function(res) {
           console.log("Transmission OK?: ", res);
         }).catch(function(err){
           console.error("Error transmitting: ", err);
