@@ -33,10 +33,13 @@ gulp.task('qualitychecker', function(cb) {
 
 gulp.task('js', function (cb) {
   pump([
-				gulp.src('IR/**/*.js'),
-				babel({"presets": ["env"]}),
-				uglify(),
-        gulp.dest(dest)
+			gulp.src([
+				'!IR/**/test/*.*',
+				'IR/**/*.js',
+			]),
+			babel({"presets": ["env"]}),
+			uglify(),
+			gulp.dest(dest)
     ],
     cb
   );
@@ -51,6 +54,12 @@ gulp.task('css', function(cb) {
 	], cb);
 });
 
+gulp.task('dependencies', function(cb){
+	pump([
+		gulp.src('IR/**/assets/*.*'),
+		gulp.dest(dest)
+	], cb);
+})
 
 gulp.task('html', function (cb) {
   pump([
@@ -62,5 +71,5 @@ gulp.task('html', function (cb) {
   );
 });
 
-gulp.task('build', ['js', 'css', 'html']);
+gulp.task('build', ['js', 'css', 'html', 'dependencies']);
 gulp.task('default', ['qualitychecker']);
